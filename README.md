@@ -24,6 +24,7 @@ cd JapaneseGardenImagePromptGenerator
 ```
 
 ### 2. Install dependencies
+Make sure Python 3.10+ is installed, then run:
 ```
 pip install -r requirements.txt
 ```
