@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+build/
+dist/
+*.spec
+*.exe
+
+# Virtual environment folders (optional)
+.venv/
+env/
