@@ -1,25 +1,25 @@
-# 🌿 Garden Prompt Generator
+# Garden Prompt Generator
 
 A desktop app built with **Python and Tkinter** to generate **photorealistic Japanese garden prompts** and **SEO-optimized YouTube titles/descriptions** — perfect for lo-fi music creators, aesthetic YouTubers, or chill visual artists.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🎴 **Image Prompt Generator**  
+- **Image Prompt Generator**  
   Generate rich, aesthetic prompts (e.g., "a peaceful zen garden under the rain") for use with AI image tools like Midjourney or DALL·E.
 
-- 🏷 **Title Generator**  
+- **Title Generator**  
   Instantly generate unique title combinations with categories like Japanese, Chinese, and Rain-Themed words.  
   Save, copy, delete, and even prepare SEO-ready prompts for ChatGPT with a single click.
 
-- 💡 **Main Launcher GUI**  
+- **Main Launcher GUI**  
   A clean start screen that lets you launch either generator in separate tabs — no coding knowledge required.
 
-- 🎨 **Light/Dark Mode** toggle
+- **Light/Dark Mode** toggle
 
 ---
-### 🗂 Project Structure
+### Project Structure
 
 - `ImagePromptGenerator/`
   - `gui_prompt_generator.py` — GUI for image prompt generation
@@ -37,7 +37,7 @@ A desktop app built with **Python and Tkinter** to generate **photorealistic Jap
 
 
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the repo
 ```bash
