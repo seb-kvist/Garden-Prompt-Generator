@@ -1,13 +1,32 @@
+# Bytecode and cache
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 
+# Build artifacts
 build/
 dist/
 *.spec
 *.exe
 
-# Virtual environment folders (optional)
-.venv/
+# Virtual environments
 env/
+.venv/
+venv/
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Environment/secret files
+*.env
+
+# Generated/output files
+generated_titles.txt
+title_history_log.txt
+generated_prompts.txt
+
+# OS-specific files
+.DS_Store
+Thumbs.db
