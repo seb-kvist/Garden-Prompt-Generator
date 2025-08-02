@@ -23,19 +23,19 @@ A desktop app built with **Python and Tkinter** to generate **photorealistic Jap
 ## 🗂 Project Structure
 
 Garden-Prompt-Generator/
-│
 ├── ImagePromptGenerator/
-│ └── gui_prompt_generator.py # GUI for image prompt generation
+│   └── gui_prompt_generator.py          # GUI for image prompt generation
 │
 ├── TitleGenerator/
-│ └── main_title_generator_gui.py # GUI for title + SEO helper
-│ └── thumbnail_title_word_lists... # CSV with words used in titles
+│   ├── main_title_generator_gui.py      # GUI for title + SEO helper
+│   └── thumbnail_title_word_lists.csv   # Word source for title combinations
 │
 ├── Launcher/
-│ └── main_launcher.py # Starts the app and tabs
+│   └── main_launcher.py                 # Launches the app and tabs
 │
 ├── .gitignore
 └── README.md
+
 
 
 ## 🚀 Getting Started
