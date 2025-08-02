@@ -5,24 +5,21 @@ from datetime import datetime
 import pandas as pd
 import random
 import csv
-
-
-OUTPUT_FILE = "generated_prompts.txt"
-DEFAULT_PROMPT_COUNT = 5
 import sys
 
+# ---- Konstanter ----
+OUTPUT_FILE = "generated_prompts.txt"
+DEFAULT_PROMPT_COUNT = 5
+
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    if getattr(sys, 'frozen', False):  # Running in PyInstaller bundle
+    if getattr(sys, 'frozen', False):
         base_path = sys._MEIPASS
     else:
-        base_path = os.path.abspath(".")
+        # 👇 Detta pekar på den mapp där GUI-filen faktiskt ligger
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 CSV_FILE = resource_path("japanese_garden_objects.csv")
-OUTPUT_FILE = "generated_prompts.txt"
-DEFAULT_PROMPT_COUNT = 5
-
 df = pd.read_csv(CSV_FILE)
 
 INTROS = [
@@ -59,9 +56,15 @@ THEMES = {
 }
 current_theme = "light"
 
+# Globala variabler för widgets (för att komma åt i funktioner)
+prompt_count_entry = None
+prompt_frame = None
+canvas = None
+canvas_window = None
+
 def apply_theme(widget):
     colors = THEMES[current_theme]
-    root.configure(bg=colors["bg"])
+    widget.configure(bg=colors["bg"])
     for w in widget.winfo_children():
         cls = w.__class__.__name__
         if cls in ("Frame", "LabelFrame"):
@@ -74,10 +77,10 @@ def apply_theme(widget):
         elif cls == "Entry":
             w.configure(bg=colors["entry"], fg=colors["fg"], insertbackground=colors["fg"])
 
-def toggle_theme():
+def toggle_theme(parent):
     global current_theme
     current_theme = "dark" if current_theme == "light" else "light"
-    apply_theme(root)
+    apply_theme(parent)
     show_saved_prompts()
 
 def generate_prompt(df):
@@ -129,7 +132,6 @@ def delete_prompt_by_number(number_to_delete):
         lines = f.readlines()
     new_lines = []
     skip = False
-    current_num = None
     for line in lines:
         if line.startswith("Prompt "):
             current_num = int(line.strip().split(" ")[1].replace(":", ""))
@@ -194,6 +196,7 @@ def display_batch(header, prompts):
     outer = tk.LabelFrame(prompt_frame, text=f"{header} ({len(prompts)} prompts)",
                           bg=colors["header"], fg=colors["fg"], font=("Poppins", 10, "bold"), bd=2, relief="ridge")
     outer.pack(fill="x", padx=10, pady=8, ipadx=5, ipady=5)
+
     btn_frame = tk.Frame(outer, bg=colors["header"])
     btn_frame.pack(anchor="e", padx=10)
     collapsed = tk.BooleanVar(value=False)
@@ -212,8 +215,8 @@ def display_batch(header, prompts):
 
     def copy_batch():
         full = "\n\n".join([p[1] for p in prompts])
-        root.clipboard_clear()
-        root.clipboard_append(full)
+        prompt_frame.clipboard_clear()
+        prompt_frame.clipboard_append(full)
         messagebox.showinfo("Copied", f"Copied {len(prompts)} prompts.")
 
     def delete_entire_batch():
@@ -234,20 +237,18 @@ def display_prompt(parent, number, text):
     container = tk.Frame(parent, bg=colors["prompt"], bd=1, relief="solid")
     container.pack(anchor="w", fill="x", padx=10, pady=5)
 
-    label = tk.Label(container, text=f"Prompt {number}:", font=("Poppins", 10, "bold"),
-                     fg="#69c", bg=colors["prompt"])
-    label.pack(anchor="w", padx=10, pady=(5, 0))
+    tk.Label(container, text=f"Prompt {number}:", font=("Poppins", 10, "bold"),
+             fg="#69c", bg=colors["prompt"]).pack(anchor="w", padx=10, pady=(5, 0))
 
-    body = tk.Label(container, text=text, font=("Poppins", 10), wraplength=900,
-                    justify="left", bg=colors["prompt"], fg=colors["fg"])
-    body.pack(anchor="w", padx=10, pady=(0, 5))
+    tk.Label(container, text=text, font=("Poppins", 10), wraplength=900,
+             justify="left", bg=colors["prompt"], fg=colors["fg"]).pack(anchor="w", padx=10, pady=(0, 5))
 
     button_frame = tk.Frame(container, bg=colors["prompt"])
     button_frame.pack(anchor="e", padx=10, pady=(0, 5))
 
     def copy_prompt():
-        root.clipboard_clear()
-        root.clipboard_append(text)
+        prompt_frame.clipboard_clear()
+        prompt_frame.clipboard_append(text)
         messagebox.showinfo("Copied", f"Prompt {number} copied to clipboard.")
 
     def delete_prompt():
@@ -257,10 +258,8 @@ def display_prompt(parent, number, text):
               fg=colors["button_fg"], relief="flat", font=("Poppins", 9)).pack(side="left", padx=5)
     tk.Button(button_frame, text="🗑 Delete", command=delete_prompt,
               bg=colors["exit"], relief="flat", font=("Poppins", 9)).pack(side="left", padx=5)
-
-# CSV EDITOR
 def open_csv_editor():
-    editor = tk.Toplevel(root)
+    editor = tk.Toplevel()
     editor.title("Edit Object List (CSV)")
     editor.geometry("800x500")
     editor.configure(bg=THEMES[current_theme]["bg"])
@@ -320,54 +319,54 @@ def open_csv_editor():
     tk.Button(bottom, text="➖ Delete Last Row", command=delete_last_row).pack(side="left", padx=6)
     tk.Button(bottom, text="❌ Close", command=editor.destroy).pack(side="left", padx=6)
 
-# GUI START
-root = tk.Tk()
-root.title("Japanese Garden Image Prompt Generator")
-root.geometry("1000x800")
 
-tk.Label(root, text="Japanese Garden Image Prompt Generator", font=("Poppins", 14)).pack(pady=10)
+def build_gui(parent):
+    global prompt_count_entry, prompt_frame, canvas, canvas_window
 
-top_controls_frame = tk.Frame(root)
-top_controls_frame.pack(pady=(5, 0))
+    apply_theme(parent)
 
-prompt_row = tk.Frame(top_controls_frame)
-prompt_row.pack(pady=5)
+    tk.Label(parent, text="Japanese Garden Image Prompt Generator", font=("Poppins", 14)).pack(pady=10)
 
-tk.Label(prompt_row, text="Prompts to Generate:", font=("Poppins", 10)).pack(side=tk.LEFT)
-prompt_count_entry = tk.Entry(prompt_row, width=5, font=("Poppins", 10))
-prompt_count_entry.insert(0, str(DEFAULT_PROMPT_COUNT))
-prompt_count_entry.pack(side=tk.LEFT, padx=6)
+    top_controls_frame = tk.Frame(parent)
+    top_controls_frame.pack(pady=(5, 0))
 
-tk.Button(prompt_row, text="📦 Generate Batch", command=generate_prompt_batch,
-          relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
-tk.Button(prompt_row, text="📝 Edit Object List (CSV)", command=open_csv_editor,
-          relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
-tk.Button(prompt_row, text="🌙 Toggle Theme", command=toggle_theme,
-          relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
+    prompt_row = tk.Frame(top_controls_frame)
+    prompt_row.pack(pady=5)
 
-canvas_frame = tk.Frame(root)
-canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    tk.Label(prompt_row, text="Prompts to Generate:", font=("Poppins", 10)).pack(side=tk.LEFT)
+    prompt_count_entry = tk.Entry(prompt_row, width=5, font=("Poppins", 10))
+    prompt_count_entry.insert(0, str(DEFAULT_PROMPT_COUNT))
+    prompt_count_entry.pack(side=tk.LEFT, padx=6)
 
-canvas = tk.Canvas(canvas_frame)
-scrollbar = tk.Scrollbar(canvas_frame, command=canvas.yview)
-canvas.configure(yscrollcommand=scrollbar.set)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    tk.Button(prompt_row, text="📦 Generate Batch", command=generate_prompt_batch,
+              relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
 
-prompt_frame = tk.Frame(canvas)
-canvas_window = canvas.create_window((0, 0), window=prompt_frame, anchor="nw", width=canvas.winfo_width())
+    # 📝 Edit CSV Button
+    tk.Button(prompt_row, text="📝 Edit Object List (CSV)", command=open_csv_editor,
+              relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
 
-def resize_canvas(event): canvas.itemconfig(canvas_window, width=event.width)
-def on_configure(event): canvas.configure(scrollregion=canvas.bbox("all"))
-def _on_mousewheel(event): canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    tk.Button(prompt_row, text="🌙 Toggle Theme", command=lambda: toggle_theme(parent),
+              relief="flat", padx=10, pady=4, font=("Poppins", 10)).pack(side=tk.LEFT, padx=5)
 
-canvas.bind("<Configure>", resize_canvas)
-prompt_frame.bind("<Configure>", on_configure)
-canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    canvas_frame = tk.Frame(parent)
+    canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-tk.Button(root, text="❌ Exit", command=root.quit, font=("Poppins", 10, "bold"),
-          relief="flat", padx=20, pady=6, bg=THEMES[current_theme]["exit"]).pack(pady=10)
+    canvas = tk.Canvas(canvas_frame)
+    scrollbar = tk.Scrollbar(canvas_frame, command=canvas.yview)
+    canvas.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-apply_theme(root)
-show_saved_prompts()
-root.mainloop()
+    prompt_frame = tk.Frame(canvas)
+    canvas_window = canvas.create_window((0, 0), window=prompt_frame, anchor="nw", width=canvas.winfo_width())
+
+    def resize_canvas(event): canvas.itemconfig(canvas_window, width=event.width)
+    def on_configure(event): canvas.configure(scrollregion=canvas.bbox("all"))
+    def _on_mousewheel(event): canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    canvas.bind("<Configure>", resize_canvas)
+    prompt_frame.bind("<Configure>", on_configure)
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    show_saved_prompts()
+
