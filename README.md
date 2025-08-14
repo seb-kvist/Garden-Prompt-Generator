@@ -71,6 +71,11 @@ pip install -r requirements.txt
 ```bash
 python main_launcher.py
 ```
+### (OPTIONAL) Run the app through the .BAT file
+```bash
+Garden Generator\Launcher\Start-Garden-App.bat will start the app but will still require the depedencies to work. 
+```
+
 ## SEO Prompt Helper
 In the Title Generator, you can click a button to create a ready-to-paste SEO prompt that looks like this:
 ```bash
