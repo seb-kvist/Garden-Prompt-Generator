@@ -7,11 +7,20 @@ A desktop app built with **Python and Tkinter** to generate **photorealistic Jap
 ## Features
 
 - **Image Prompt Generator**  
-  Generate rich, aesthetic prompts (e.g., "a peaceful zen garden under the rain") for use with AI image tools like Midjourney or DALL·E.
+  Generate cinematic and photorealistic prompts like
+  "a fog-kissed Japanese garden under lantern light, with dew-covered bonsai and mossy footpaths..."
+  Use with tools like Midjourney, DALL·E, or ChatGPT's built-in image model.
 
 - **Title Generator**  
   Instantly generate unique title combinations with categories like Japanese, Chinese, and Rain-Themed words.  
   Save, copy, delete, and even prepare SEO-ready prompts for ChatGPT with a single click.
+
+- **Music Prompt Generator**  
+  Generate text prompts for local music generation models (e.g., MusicGen, Riffusion, etc).
+  Great for creating chill background tracks or ambient loops based on natural aesthetics.
+
+  ⚠️ Requires a local AI music model installed on your machine.
+  This app does not generate audio by itself — it prepares prompts to use in your preferred model.
 
 - **Main Launcher GUI**  
   A clean start screen that lets you launch either generator in separate tabs — no coding knowledge required.
@@ -59,7 +68,7 @@ pip install -r requirements.txt
 ```bash
 python main_launcher.py
 ```
-## SEO Prompt Helper (ChatGPT)
+## SEO Prompt Helper
 In the Title Generator, you can click a button to create a ready-to-paste SEO prompt that looks like this:
 ```bash
 I want you to give me SEO optimized for [Title Here]. The description:
