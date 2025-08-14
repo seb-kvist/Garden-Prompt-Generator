@@ -36,6 +36,9 @@ A desktop app built with **Python and Tkinter** to generate **photorealistic Jap
 - `TitleGenerator/`
   - `main_title_generator_gui.py` — GUI for title + SEO helper
   - `thumbnail_title_word_lists.csv` — CSV source for title generation
+ 
+- `MusicGenerator/`
+  - `music_generator_gui.py` — GUI for music generator
 
 - `Launcher/`
   - `main_launcher.py` — Launches the main GUI with tabs
