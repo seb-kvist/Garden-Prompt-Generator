@@ -111,5 +111,4 @@ Welcoming tone, ask a question to invite comments
 - Designed for local use, no external APIs needed
 
 ## License
-MIT License — Free to use, modify and contribute.
-If you enjoy this project, ⭐️ it on GitHub or share it!
+I just made it for fun.. use however you want to!
