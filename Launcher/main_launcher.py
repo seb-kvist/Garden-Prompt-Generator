@@ -6,14 +6,17 @@ import os
 # ---- Fönster ----
 root = tk.Tk()
 root.title("🌿 Garden Generator")
-root.geometry("1000x800")
+root.geometry("1000x1000")
 
 # ---- Notebook (flikar), startas EJ direkt ----
 notebook = ttk.Notebook(root)
 image_tab = tk.Frame(notebook)
 title_tab = tk.Frame(notebook)
+music_tab = tk.Frame(notebook)
+
 notebook.add(image_tab, text="🖼 Image Prompt Generator")
 notebook.add(title_tab, text="🏷 Title Generator")
+notebook.add(music_tab, text="🎵 Music Generator")
 
 # ---- Ladda GUIs ----
 def load_guis():
@@ -32,6 +35,13 @@ def load_guis():
     title_gui = importlib.util.module_from_spec(spec_title)
     spec_title.loader.exec_module(title_gui)
     title_gui.build_gui(title_tab)
+
+    # Music Generator
+    music_gui_path = os.path.abspath(os.path.join(base_dir, "..", "MusicGenerator", "music_gui.py"))
+    spec_music = importlib.util.spec_from_file_location("music_gui", music_gui_path)
+    music_gui = importlib.util.module_from_spec(spec_music)
+    spec_music.loader.exec_module(music_gui)
+    music_gui.build_gui(music_tab)
 
 # ---- Startskärm ----
 start_frame = tk.Frame(root)
@@ -61,6 +71,9 @@ tk.Button(start_frame, text="🖼 Open Image Prompt Generator", width=30,
 
 tk.Button(start_frame, text="🏷 Open Title Generator", width=30,
           font=("Poppins", 12), command=lambda: open_app(1)).pack(pady=10)
+
+tk.Button(start_frame, text="🎵 Open Music Generator", width=30,
+          font=("Poppins", 12), command=lambda: open_app(2)).pack(pady=10)
 
 # ---- Start app ----
 root.mainloop()

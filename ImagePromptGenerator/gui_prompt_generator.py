@@ -36,9 +36,9 @@ INTROS = [
 ]
 
 RENDER_SETTINGS = [
-    "Shot on full-frame DSLR", "85mm lens", "f/2.8 aperture",
+    "Shot on full-frame DSLR", 
     "natural cinematic lighting", "volumetric lighting",
-    "global illumination", "shallow depth of field",
+    "global illumination", "wide angle shot", "vibrant colors", "no bokeh", "lens simulation: 24mm ultra wide angle",
     "16:9 aspect ratio", "No stylization", "100% photo-realism"
 ]
 
@@ -247,9 +247,16 @@ def display_prompt(parent, number, text):
     button_frame.pack(anchor="e", padx=10, pady=(0, 5))
 
     def copy_prompt():
+        full_text = (
+            "Instruction:\n"
+            "Reinterpret the following prompt as a cinematic photographic scene. "
+            "Do not return a rewritten version — only use it internally to generate the image.\n\n"
+            f"Prompt:\n{text}"
+        )
         prompt_frame.clipboard_clear()
-        prompt_frame.clipboard_append(text)
-        messagebox.showinfo("Copied", f"Prompt {number} copied to clipboard.")
+        prompt_frame.clipboard_append(full_text)
+        messagebox.showinfo("Copied", f"Prompt {number} copied with instruction.")
+
 
     def delete_prompt():
         delete_prompt_by_number(number)

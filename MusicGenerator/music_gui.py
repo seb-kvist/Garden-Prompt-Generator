@@ -1,93 +1,138 @@
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox
+import subprocess
+import threading
+import time
 import os
+import re
 
-# Path to the .bat file (hardcoded to local path)
-BAT_FILE_PATH = r"C:\Users\sebas\Downloads\LofiSongs\DiffRythmLocal\DiffRhythm\scripts\infer_prompt_ref.bat"
-FAVORITES_FILE = os.path.join(os.path.dirname(__file__), "favorites.txt")
+# === Configuration ===
+INFER_SCRIPT_DIR = r"C:\Users\sebas\Downloads\LofiSongs\DiffRythmLocal\DiffRhythm"
+BATCH_FILE_PATH = os.path.join(INFER_SCRIPT_DIR, "scripts", "infer_prompt_ref.bat")
+FAVORITES_FILE = os.path.join(os.path.dirname(__file__), "prompt_favorites.txt")
 
-def load_bat_settings():
-    try:
-        with open(BAT_FILE_PATH, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        max_line = next((l for l in lines if "set MAX=" in l), None)
-        prompt_line = next((l for l in lines if "--ref-prompt" in l), None)
-        max_count = int(max_line.split("=")[-1]) if max_line else 1
-        prompt = prompt_line.split('--ref-prompt')[1].split('"')[1] if prompt_line else ""
-        return max_count, prompt
-    except Exception as e:
-        messagebox.showerror("Error", f"Could not read BAT file:\n{e}")
-        return 1, ""
+# Counter to track total number of songs generated (across runs)
+song_counter = 0
 
-def save_bat_settings(count, prompt):
-    try:
-        with open(BAT_FILE_PATH, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+def build_gui(parent):
+    from tkinter import font as tkfont
+    global song_counter
 
-        for i, line in enumerate(lines):
-            if "set MAX=" in line:
-                lines[i] = f"set MAX={count}\n"
-            elif "--ref-prompt" in line:
-                parts = line.split("--ref-prompt")
-                if len(parts) > 1:
-                    rest = parts[1].split('"')
-                    if len(rest) > 2:
-                        lines[i] = parts[0] + f'--ref-prompt "{prompt}"' + '"' + '"'.join(rest[2:])
+    bold_font = ("Poppins", 10, "bold")
+    regular_font = ("Poppins", 10)
 
-        with open(BAT_FILE_PATH, "w", encoding="utf-8") as f:
-            f.writelines(lines)
-        messagebox.showinfo("Saved", "BAT file updated.")
-    except Exception as e:
-        messagebox.showerror("Error", f"Could not update BAT file:\n{e}")
+    tk.Label(parent, text="🎵 Music Generator", font=("Poppins", 14)).pack(pady=(15, 10))
 
-def save_favorite(prompt):
-    with open(FAVORITES_FILE, "a", encoding="utf-8") as f:
-        f.write(prompt.strip() + "\n")
-    messagebox.showinfo("Saved", "Prompt saved to favorites.")
+    prompt_frame = tk.Frame(parent)
+    prompt_frame.pack(pady=5)
 
-def load_favorites():
-    if not os.path.exists(FAVORITES_FILE):
-        return []
-    with open(FAVORITES_FILE, "r", encoding="utf-8") as f:
-        return [line.strip() for line in f if line.strip()]
+    tk.Label(prompt_frame, text="🎙 Prompt:", font=regular_font).grid(row=0, column=0, sticky="e", padx=(0, 5))
+    prompt_entry = tk.Entry(prompt_frame, width=60)
+    prompt_entry.insert(0, "slow Lo-fi ambience: instrumental with soft guitar, mellow piano, 40 BPM drum beat.")
+    prompt_entry.grid(row=0, column=1, padx=5)
 
-def build_gui():
-    root = tk.Tk()
-    root.title("🎵 Music Generator Configurator")
-    root.geometry("700x400")
+    tk.Label(prompt_frame, text="🎧 Song count:", font=regular_font).grid(row=0, column=2, padx=(20, 5))
+    song_count = tk.IntVar(value=2)
+    tk.Spinbox(prompt_frame, from_=1, to=1000, textvariable=song_count, width=5).grid(row=0, column=3)
 
-    count, prompt = load_bat_settings()
+    tk.Button(prompt_frame, text="💾 Save to Favorites", command=lambda: save_favorite(prompt_entry)).grid(row=0, column=4, padx=(20, 0))
 
-    tk.Label(root, text="🔁 Number of songs to generate:").pack(pady=5)
-    count_var = tk.IntVar(value=count)
-    tk.Entry(root, textvariable=count_var).pack(pady=5)
+    status_frame = tk.Frame(parent)
+    status_frame.pack(pady=5)
 
-    tk.Label(root, text="🎼 Ref Prompt:").pack(pady=5)
-    prompt_var = tk.StringVar(value=prompt)
-    tk.Entry(root, textvariable=prompt_var, width=80).pack(pady=5)
+    status_label = tk.Label(status_frame, text="⏹ Idle", fg="black", bg="lightgray", width=10)
+    status_label.pack(side="left", padx=5)
 
-    def save_all():
-        save_bat_settings(count_var.get(), prompt_var.get())
+    song_progress_label = tk.Label(status_frame, text="", font=regular_font)
+    song_progress_label.pack(side="left", padx=10)
 
-    def add_to_favorites():
-        save_favorite(prompt_var.get())
+    results_frame = tk.Frame(parent, bg="#f0f0f0")
+    results_frame.pack(fill="both", expand=True, padx=10, pady=(10, 5))
 
-    def load_selected_prompt():
-        selected = favorites_listbox.get(tk.ACTIVE)
-        prompt_var.set(selected)
+    def save_favorite(entry_widget):
+        prompt = entry_widget.get().strip()
+        if not prompt:
+            messagebox.showwarning("Missing prompt", "Please enter a prompt to save.")
+            return
+        with open(FAVORITES_FILE, "a", encoding="utf-8") as f:
+            f.write(prompt + "\n")
+        messagebox.showinfo("Saved", "Prompt saved to favorites.")
 
-    tk.Button(root, text="💾 Save Settings", command=save_all).pack(pady=5)
-    tk.Button(root, text="⭐ Save Prompt to Favorites", command=add_to_favorites).pack(pady=5)
+    def open_file_location(filename):
+        path = os.path.join(INFER_SCRIPT_DIR, "infer", "example", "output_en", filename)
+        if os.path.exists(path):
+            subprocess.Popen(f'explorer /select,"{path}"')
+        else:
+            messagebox.showwarning("File not found", f"Could not locate:\n{filename}")
 
-    tk.Label(root, text="⭐ Favorite Prompts:").pack(pady=5)
-    favorites_listbox = tk.Listbox(root, height=5)
-    for fav in load_favorites():
-        favorites_listbox.insert(tk.END, fav)
-    favorites_listbox.pack(pady=5)
+    def add_song_card(index, duration, filename):
+        card = tk.Frame(results_frame, bd=1, relief="solid", bg="white", padx=10, pady=5)
+        card.pack(pady=5, fill="x")
 
-    tk.Button(root, text="⬇ Load Selected Prompt", command=load_selected_prompt).pack(pady=5)
+        tk.Label(card, text=f"🎵 Song {index}", font=bold_font, bg="white").pack(anchor="w")
+        tk.Label(card, text=f"⏱ Time to generate: {duration:.2f} seconds", bg="white").pack(anchor="w")
+        tk.Label(card, text=f"💾 Saved: {filename}", bg="white", fg="green").pack(anchor="w")
 
-    root.mainloop()
+        tk.Button(card, text="📂 Open Folder", command=lambda: open_file_location(filename)).pack(anchor="e", pady=3)
 
-if __name__ == "__main__":
-    build_gui()
+    def run_generation():
+        global song_counter
+        prompt = prompt_entry.get().strip()
+        count = song_count.get()
+        if not prompt:
+            messagebox.showerror("Error", "Prompt cannot be empty.")
+            return
+
+        if not os.path.exists(BATCH_FILE_PATH):
+            messagebox.showerror("Missing BAT file", f"Cannot find batch file at:\n{BATCH_FILE_PATH}")
+            return
+
+        # Update BAT file with prompt and count
+        new_lines = []
+        with open(BATCH_FILE_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("set MAX="):
+                    new_lines.append(f"set MAX={count}\n")
+                elif "--ref-prompt" in line:
+                    new_lines.append(f'python %~dp0..\\infer\\infer.py --ref-prompt "{prompt}" --audio-length 95 --repo-id ASLP-lab/DiffRhythm-1_2 --output-dir infer/example/output_en --chunked\n')
+                else:
+                    new_lines.append(line)
+        with open(BATCH_FILE_PATH, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+
+        def run():
+            global song_counter
+            status_label.config(text="🟢 Running", bg="green", fg="white")
+            song_index = 0
+            duration = 0
+            process = subprocess.Popen(
+                ["cmd.exe", "/c", BATCH_FILE_PATH],
+                cwd=INFER_SCRIPT_DIR,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True
+            )
+
+            for line in process.stdout:
+                line = line.strip()
+                if line.startswith("Loop "):
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        song_index = int(parts[1])
+                        song_progress_label.config(text=f"🎶 Song {song_index} of {count}")
+                elif "inference cost" in line:
+                    duration = float(line.split()[-2])
+                elif "Song saved as" in line:
+                    filename = line.split("as")[-1].strip()
+                    song_counter += 1
+                    add_song_card(song_counter, duration, filename)
+                elif "DONE" in line:
+                    status_label.config(text="✅ Done", bg="lightgreen", fg="black")
+                    song_progress_label.config(text="")
+
+            process.wait()
+
+        threading.Thread(target=run).start()
+
+    tk.Button(parent, text="🎼 Generate Songs", font=("Poppins", 11),
+              command=run_generation).pack(pady=15)
